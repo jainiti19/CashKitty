@@ -3,11 +3,14 @@
 import BalanceCard from "@/components/BalanceCard";
 import RecentTransactions from "@/components/RecentTransactions";
 import Link from "next/link";
+import AlertBanner from "@/components/AlertBanner";
 
 export default function Dashboard() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <h2 className="text-2xl font-bold text-[#2c2418] tracking-tight">Dashboard</h2>
+
+      <AlertBanner />
 
       <BalanceCard />
 

@@ -61,12 +61,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <HelperContext.Provider value={user}>
       <div className="flex min-h-screen">
         <Navbar helperName={user.name} role={user.role} onChangeName={handleChangeName} />
-        <main className="flex-1 overflow-auto">
-          <div className="flex items-center justify-center gap-3 py-3 bg-[#f0ebe3]/80 backdrop-blur-md border-b border-[#d4c9b8]/50 sticky top-0 z-10">
+        <main className="flex-1 overflow-auto pb-20 md:pb-0">
+          {/* Mobile header */}
+          <div className="md:hidden flex items-center justify-center gap-2 py-3 bg-[#f0ebe3]/80 backdrop-blur-md border-b border-[#d4c9b8]/50 sticky top-0 z-30">
+            <Image src="/logo.png" alt="CashKitty" width={28} height={28} className="rounded-lg" />
+            <span className="text-base font-bold text-[#2c2418] tracking-tight">CashKitty</span>
+          </div>
+          {/* Desktop header */}
+          <div className="hidden md:flex items-center justify-center gap-3 py-3 bg-[#f0ebe3]/80 backdrop-blur-md border-b border-[#d4c9b8]/50 sticky top-0 z-10">
             <Image src="/logo.png" alt="CashKitty" width={32} height={32} className="rounded-lg" />
             <span className="text-lg font-bold text-[#2c2418] tracking-tight">CashKitty</span>
           </div>
-          <div className="p-6 animate-fade-in">{children}</div>
+          <div className="p-4 md:p-6 animate-fade-in">{children}</div>
         </main>
       </div>
     </HelperContext.Provider>

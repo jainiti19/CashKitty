@@ -10,7 +10,7 @@ export default function RecentTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
-    fetch("/api/transactions?limit=10")
+    fetch("/api/transactions?limit=5")
       .then((r) => r.json())
       .then((d) => setTransactions(d.transactions));
   }, []);

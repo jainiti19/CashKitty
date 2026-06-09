@@ -5,6 +5,24 @@ export interface Category {
   created_at: string;
 }
 
+export interface FraudFlag {
+  flagged: boolean;
+  reason: string;
+  severity: "low" | "medium" | "high";
+}
+
+export interface Alert {
+  id: number;
+  type: "category_deviation" | "upward_trend" | "invoice_mismatch";
+  severity: "low" | "medium" | "high";
+  message: string;
+  details: Record<string, unknown> | null;
+  transaction_ids: string[] | null;
+  recommendation: string | null;
+  detected_at: string;
+  resolved: boolean;
+}
+
 export interface Transaction {
   id: string;
   type: "income" | "expense";
@@ -16,6 +34,7 @@ export interface Transaction {
   helper_name: string;
   invoice_image: string | null;
   ocr_raw: string | null;
+  fraud_flag?: FraudFlag | null;
   date: string;
   created_at: string;
   updated_at: string;

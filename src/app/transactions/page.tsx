@@ -189,7 +189,7 @@ export default function TransactionsPage() {
             {txns.length === 0 ? (
               <div className="p-8 text-center text-gray-400">No transactions found.</div>
             ) : (
-              <table className="w-full">
+              <div className="overflow-x-auto"><table className="w-full min-w-[640px]">
                 <thead>
                   <tr className="border-b border-gray-100 text-left text-xs text-gray-500 uppercase">
                     <th className="px-4 py-3">Date</th>
@@ -244,7 +244,7 @@ export default function TransactionsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </div>
         );

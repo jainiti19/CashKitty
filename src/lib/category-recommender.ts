@@ -1,6 +1,6 @@
 import db from "./db";
 
-const KEYWORD_MAP: Record<string, string[]> = {
+export const KEYWORD_MAP: Record<string, string[]> = {
   Grocery: [
     "grocery", "supermarket", "vegetables", "fruits", "milk", "bread",
     "rice", "food", "provisions", "eggs", "meat", "fish", "flour",

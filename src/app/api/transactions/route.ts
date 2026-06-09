@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { detectInvoiceMismatch } from "@/lib/fraud-detector";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -63,6 +64,28 @@ export async function POST(request: NextRequest) {
     `INSERT INTO transactions (id, type, amount, description, category_id, helper_name, invoice_image, ocr_raw, date)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(id, type, amount, description || null, category_id || null, helper_name, invoice_image || null, ocr_raw || null, date);
+
+  // Invoice-level fraud check for expenses with a category
+  if (type === "expense" && category_id) {
+    const category = db.prepare("SELECT name FROM categories WHERE id = ?").get(category_id) as { name: string } | undefined;
+    if (category) {
+      const flag = detectInvoiceMismatch(category.name, description || "", ocr_raw || "");
+      if (flag && flag.flagged) {
+        db.prepare("UPDATE transactions SET fraud_flag = ? WHERE id = ?")
+          .run(JSON.stringify(flag), id);
+        db.prepare(
+          `INSERT INTO alerts (type, severity, message, details, transaction_ids, recommendation)
+           VALUES ('invoice_mismatch', ?, ?, ?, ?, ?)`
+        ).run(
+          flag.severity,
+          flag.reason,
+          JSON.stringify({ category: category.name, description }),
+          JSON.stringify([id]),
+          `Review this expense. The invoice content doesn't match the "${category.name}" category.`
+        );
+      }
+    }
+  }
 
   const transaction = db
     .prepare(

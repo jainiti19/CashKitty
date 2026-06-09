@@ -45,4 +45,26 @@ db.exec(`
     ('Other',      '#6B7280');
 `);
 
+// Migration: add fraud_flag column
+const cols = db.prepare("PRAGMA table_info(transactions)").all() as { name: string }[];
+if (!cols.some((c) => c.name === "fraud_flag")) {
+  db.exec("ALTER TABLE transactions ADD COLUMN fraud_flag TEXT DEFAULT NULL");
+}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS alerts (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    type            TEXT NOT NULL CHECK(type IN ('category_deviation','upward_trend','invoice_mismatch')),
+    severity        TEXT NOT NULL CHECK(severity IN ('low','medium','high')),
+    message         TEXT NOT NULL,
+    details         TEXT,
+    transaction_ids TEXT,
+    recommendation  TEXT,
+    detected_at     TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved        INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS idx_alerts_type ON alerts(type);
+  CREATE INDEX IF NOT EXISTS idx_alerts_resolved ON alerts(resolved);
+`);
+
 export default db;

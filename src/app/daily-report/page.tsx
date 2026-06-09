@@ -30,7 +30,7 @@ export default function DailyReportPage() {
 
       {report && (
         <>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 md:gap-4">
             <div className="glass rounded-2xl p-5 text-center shadow-sm">
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Income</div>
               <div className="text-2xl font-bold text-emerald-600 tracking-tight">

@@ -78,7 +78,7 @@ export default function TrendsPage() {
       </div>
 
       {summary && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           <div className="glass rounded-2xl p-5 text-center shadow-sm">
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Spend</div>
             <div className="text-2xl font-bold text-orange-500 tracking-tight">{fmt(summary.total_spend)}</div>
