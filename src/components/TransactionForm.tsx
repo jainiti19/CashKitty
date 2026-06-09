@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Category } from "@/types";
+import type { Category, PaymentChannel } from "@/types";
 
 interface TransactionFormProps {
   type: "income" | "expense";
   helperName: string;
+  channelId?: number | null;
   initialData?: {
     amount?: number;
     description?: string;
@@ -16,21 +17,26 @@ interface TransactionFormProps {
   editMode?: { id: string };
 }
 
-export default function TransactionForm({ type, helperName, initialData, onSuccess, editMode }: TransactionFormProps) {
+export default function TransactionForm({ type, helperName, channelId: externalChannelId, initialData, onSuccess, editMode }: TransactionFormProps) {
   const [amount, setAmount] = useState(initialData?.amount?.toString() || "");
   const [description, setDescription] = useState(initialData?.description || "");
   const [categoryId, setCategoryId] = useState<number | "">(initialData?.category_id || "");
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().split("T")[0]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [channels, setChannels] = useState<PaymentChannel[]>([]);
+  const [channelId, setChannelId] = useState<number | "">(externalChannelId || "");
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" | "warning" } | null>(null);
   const [recommendedCategory, setRecommendedCategory] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/categories")
-      .then((r) => r.json())
-      .then((d) => setCategories(d.categories));
+    fetch("/api/categories").then((r) => r.json()).then((d) => setCategories(d.categories));
+    fetch("/api/channels").then((r) => r.json()).then((d) => setChannels(d.channels));
   }, []);
+
+  useEffect(() => {
+    if (externalChannelId) setChannelId(externalChannelId);
+  }, [externalChannelId]);
 
   useEffect(() => {
     if (initialData?.amount) setAmount(initialData.amount.toString());
@@ -58,6 +64,8 @@ export default function TransactionForm({ type, helperName, initialData, onSucce
     return () => clearTimeout(timeout);
   }, [description, type, categories, categoryId]);
 
+  const selectedChannel = channels.find((c) => c.id === channelId);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -71,6 +79,7 @@ export default function TransactionForm({ type, helperName, initialData, onSucce
       description: description || null,
       helper_name: helperName,
       date,
+      channel_id: channelId || null,
     };
 
     if (type === "expense") {
@@ -90,7 +99,14 @@ export default function TransactionForm({ type, helperName, initialData, onSucce
         throw new Error(err.error || "Failed to save");
       }
 
-      setMessage({ text: editMode ? "Updated!" : "Saved!", type: "success" });
+      const data = await res.json();
+
+      if (data.limit_warning) {
+        setMessage({ text: `Saved! Warning: ${data.limit_warning}`, type: "warning" });
+      } else {
+        setMessage({ text: editMode ? "Updated!" : "Saved!", type: "success" });
+      }
+
       if (!editMode) {
         setAmount("");
         setDescription("");
@@ -106,6 +122,41 @@ export default function TransactionForm({ type, helperName, initialData, onSucce
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Channel selector */}
+      {!externalChannelId && (
+        <div>
+          <label className="block text-xs font-semibold text-[#8b7355] uppercase tracking-wider mb-2">
+            {type === "income" ? "Fund to" : "Pay via"}
+          </label>
+          <div className="flex gap-2 flex-wrap">
+            {channels.map((ch) => (
+              <button
+                key={ch.id}
+                type="button"
+                onClick={() => setChannelId(ch.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
+                  channelId === ch.id
+                    ? "border-[#5c6b3c] bg-[#5c6b3c]/10 text-[#2c2418]"
+                    : "border-[#d4c9b8]/50 text-[#8b7355] hover:border-[#d4c9b8]"
+                }`}
+              >
+                <span>{ch.icon}</span>
+                <span>{ch.name}</span>
+              </button>
+            ))}
+          </div>
+          {selectedChannel && type === "expense" && selectedChannel.monthly_limit && (
+            <div className={`mt-2 text-xs px-3 py-1.5 rounded-lg ${
+              (selectedChannel.remaining ?? 0) < 0
+                ? "bg-red-50 text-red-600 border border-red-200"
+                : "bg-[#f0ebe3] text-[#6b5740]"
+            }`}>
+              Monthly limit: {selectedChannel.monthly_limit} · Remaining: {Math.round(selectedChannel.remaining ?? 0)}
+            </div>
+          )}
+        </div>
+      )}
+
       <div>
         <label className="block text-xs font-semibold text-[#8b7355] uppercase tracking-wider mb-2">Amount</label>
         <input
@@ -166,7 +217,11 @@ export default function TransactionForm({ type, helperName, initialData, onSucce
       </div>
 
       {message && (
-        <div className={`px-4 py-3 rounded-xl text-sm font-medium ${message.type === "success" ? "bg-[#5c6b3c]/10 text-[#5c6b3c] border border-[#5c6b3c]/20" : "bg-red-50 text-red-700 border border-red-200"}`}>
+        <div className={`px-4 py-3 rounded-xl text-sm font-medium ${
+          message.type === "success" ? "bg-[#5c6b3c]/10 text-[#5c6b3c] border border-[#5c6b3c]/20"
+          : message.type === "warning" ? "bg-amber-50 text-amber-700 border border-amber-200"
+          : "bg-red-50 text-red-700 border border-red-200"
+        }`}>
           {message.text}
         </div>
       )}

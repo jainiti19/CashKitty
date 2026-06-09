@@ -11,7 +11,7 @@ export default function AddMoneyPage() {
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800 tracking-tight">Add Money to Kitty</h2>
+      <h2 className="text-2xl font-bold text-[#2c2418] tracking-tight">Add Money to Kitty</h2>
 
       <BalanceCard key={key} />
 

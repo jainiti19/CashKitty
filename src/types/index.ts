@@ -23,6 +23,18 @@ export interface Alert {
   resolved: boolean;
 }
 
+export interface PaymentChannel {
+  id: number;
+  name: string;
+  type: "cash" | "wallet" | "card";
+  monthly_limit: number | null;
+  color: string;
+  icon: string;
+  funded?: number;
+  spent?: number;
+  remaining?: number;
+}
+
 export interface Transaction {
   id: string;
   type: "income" | "expense";
@@ -31,6 +43,9 @@ export interface Transaction {
   category_id: number | null;
   category_name?: string;
   category_color?: string;
+  channel_id: number | null;
+  channel_name?: string;
+  channel_icon?: string;
   helper_name: string;
   invoice_image: string | null;
   ocr_raw: string | null;
@@ -68,4 +83,10 @@ export interface KittyBalance {
   balance: number;
   total_income: number;
   total_expense: number;
+  by_channel: PaymentChannel[];
+}
+
+export interface OcrResultExtended extends OcrResult {
+  source_type: "invoice" | "wallet_statement";
+  wallet_name: string | null;
 }

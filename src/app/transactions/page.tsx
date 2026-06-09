@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import type { Transaction, Category } from "@/types";
+import type { Transaction, Category, PaymentChannel } from "@/types";
 import CategoryBadge from "@/components/CategoryBadge";
 import { useHelperName } from "@/components/AppShell";
 import { format } from "date-fns";
@@ -16,6 +16,8 @@ export default function TransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [filterType, setFilterType] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+  const [filterChannel, setFilterChannel] = useState("");
+  const [channels, setChannels] = useState<PaymentChannel[]>([]);
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
   const [sortBy, setSortBy] = useState<SortBy>("date-desc");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -32,9 +34,8 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     loadTransactions();
-    fetch("/api/categories")
-      .then((r) => r.json())
-      .then((d) => setCategories(d.categories));
+    fetch("/api/categories").then((r) => r.json()).then((d) => setCategories(d.categories));
+    fetch("/api/channels").then((r) => r.json()).then((d) => setChannels(d.channels));
   }, []);
 
   useEffect(() => {
@@ -46,6 +47,9 @@ export default function TransactionsPage() {
     if (filterCategory) {
       filtered = filtered.filter((t) => t.category_name === filterCategory);
     }
+    if (filterChannel) {
+      filtered = filtered.filter((t) => t.channel_name === filterChannel);
+    }
 
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -56,7 +60,7 @@ export default function TransactionsPage() {
       }
     });
     return filtered;
-  }, [transactions, sortBy, filterCategory]);
+  }, [transactions, sortBy, filterCategory, filterChannel]);
 
   const grouped = useMemo(() => {
     if (groupBy === "none") return { "All Transactions": sortedTransactions };
@@ -135,6 +139,13 @@ export default function TransactionsPage() {
             </select>
           </div>
           <div>
+            <label className="block text-xs text-gray-500 mb-1">Channel</label>
+            <select value={filterChannel} onChange={(e) => setFilterChannel(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <option value="">All channels</option>
+              {channels.map((c) => <option key={c.id} value={c.name}>{c.icon} {c.name}</option>)}
+            </select>
+          </div>
+          <div>
             <label className="block text-xs text-gray-500 mb-1">Group by</label>
             <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as GroupBy)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
               <option value="none">No grouping</option>
@@ -152,10 +163,10 @@ export default function TransactionsPage() {
               <option value="amount-asc">Amount (lowest)</option>
             </select>
           </div>
-          {(filterType || filterCategory || groupBy !== "none" || sortBy !== "date-desc") && (
+          {(filterType || filterCategory || filterChannel || groupBy !== "none" || sortBy !== "date-desc") && (
             <div className="self-end">
               <button
-                onClick={() => { setFilterType(""); setFilterCategory(""); setGroupBy("none"); setSortBy("date-desc"); }}
+                onClick={() => { setFilterType(""); setFilterCategory(""); setFilterChannel(""); setGroupBy("none"); setSortBy("date-desc"); }}
                 className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700"
               >
                 Reset all
@@ -195,6 +206,7 @@ export default function TransactionsPage() {
                     <th className="px-4 py-3">Date</th>
                     <th className="px-4 py-3">Description</th>
                     <th className="px-4 py-3">Category</th>
+                    <th className="px-4 py-3">Channel</th>
                     <th className="px-4 py-3">Helper</th>
                     <th className="px-4 py-3 text-right">Amount</th>
                     <th className="px-4 py-3">Actions</th>
@@ -217,7 +229,8 @@ export default function TransactionsPage() {
                               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                           </td>
-                          <td className="px-4 py-2 text-sm text-gray-600">{t.helper_name}</td>
+                          <td className="px-4 py-2 text-sm">{t.channel_icon} {t.channel_name || "-"}</td>
+                      <td className="px-4 py-2 text-sm text-gray-600">{t.helper_name}</td>
                           <td className="px-4 py-2">
                             <input type="number" step="0.01" value={editData.amount || ""} onChange={(e) => setEditData({ ...editData, amount: parseFloat(e.target.value) })} className="px-2 py-1 border rounded text-sm w-24 text-right" />
                           </td>
@@ -231,7 +244,8 @@ export default function TransactionsPage() {
                           <td className="px-4 py-3 text-sm">{format(new Date(t.date), "dd MMM yyyy")}</td>
                           <td className="px-4 py-3 text-sm">{t.description || "-"}</td>
                           <td className="px-4 py-3"><CategoryBadge name={t.category_name} color={t.category_color} /></td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{t.helper_name}</td>
+                          <td className="px-4 py-3 text-sm">{t.channel_icon} {t.channel_name || "-"}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{t.helper_name}</td>
                           <td className={`px-4 py-3 text-sm text-right font-medium ${t.type === "income" ? "text-emerald-600" : "text-orange-600"}`}>
                             {t.type === "income" ? "+" : "-"}{fmt(t.amount)}
                           </td>

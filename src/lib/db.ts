@@ -45,6 +45,34 @@ db.exec(`
     ('Other',      '#6B7280');
 `);
 
+// Payment channels
+db.exec(`
+  CREATE TABLE IF NOT EXISTS payment_channels (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          TEXT NOT NULL UNIQUE,
+    type          TEXT NOT NULL CHECK(type IN ('cash','wallet','card')),
+    monthly_limit REAL DEFAULT NULL,
+    color         TEXT NOT NULL DEFAULT '#6B7280',
+    icon          TEXT NOT NULL DEFAULT '💵',
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  INSERT OR IGNORE INTO payment_channels (name, type, color, icon) VALUES
+    ('Cash', 'cash', '#5c6b3c', '💵'),
+    ('Octopus', 'wallet', '#06B6D4', '🐙'),
+    ('Credit Card', 'card', '#8B5CF6', '💳');
+`);
+
+// Migration: add channel_id column
+const txnCols = db.prepare("PRAGMA table_info(transactions)").all() as { name: string }[];
+if (!txnCols.some((c) => c.name === "channel_id")) {
+  db.exec("ALTER TABLE transactions ADD COLUMN channel_id INTEGER REFERENCES payment_channels(id) DEFAULT NULL");
+  // Default existing transactions to Cash channel
+  const cashChannel = db.prepare("SELECT id FROM payment_channels WHERE name = 'Cash'").get() as { id: number } | undefined;
+  if (cashChannel) {
+    db.prepare("UPDATE transactions SET channel_id = ? WHERE channel_id IS NULL").run(cashChannel.id);
+  }
+}
+
 // Migration: add fraud_flag column
 const cols = db.prepare("PRAGMA table_info(transactions)").all() as { name: string }[];
 if (!cols.some((c) => c.name === "fraud_flag")) {
