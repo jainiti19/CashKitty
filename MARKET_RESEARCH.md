@@ -83,6 +83,23 @@ This is a universally acknowledged pain point (Sassy Mama HK, expat forums, help
 5. **No hardware needed** — just phones both parties already have
 6. **HK-specific** — built for this market's dynamics (weekly cash, Chinese receipts)
 
+## Additional Dimension: Salary, Loan & Repayment Tracker
+
+Beyond petty cash, employers also manage:
+- **Monthly salary payments** — need record keeping for tax/visa purposes
+- **Loans/advances to helper** — very common (helper asks for advance, flights home, family emergencies)
+- **Repayment tracking** — deducted from salary over months, easy to lose track
+- **Annual summary** — needed for contract renewal, visa applications
+
+This expands CashKitty from "petty cash tracker" to **full employer-helper financial management**:
+- Petty cash kitty (current)
+- Salary payment log
+- Loan ledger (amount, date, repayment schedule)
+- Auto-deduction tracking from salary
+- Annual statement generation
+
+This makes the app significantly more valuable and stickier — salary + loan data = high switching cost.
+
 ---
 
 ## Potential Pricing Models
@@ -175,11 +192,23 @@ This is a universally acknowledged pain point (Sassy Mama HK, expat forums, help
 
 ## Next Steps
 
-- [ ] Talk to 5 employers (including Suchi, Kritika, Anu?) about their current petty cash system
+### Validation
+- [ ] Process quick survey results
+- [ ] Talk to 5 employers (Shuchi, Kritika, Anu, Nupur, Anisha) about petty cash + salary + loan pain
 - [ ] Talk to 2-3 helpers — would they use an app? What language? What phone?
 - [ ] Test receipt OCR on real HK receipts (ParknShop, Wellcome, wet market, 7-Eleven)
 - [ ] Check if Enrich Planner is still active / well-adopted
+
+### Build
+- [ ] Add salary payment tracker (log monthly payments, generate payslip)
+- [ ] Add loan/advance ledger (amount, date, reason, repayment schedule)
+- [ ] Add auto-deduction from salary (link loan repayment to monthly salary)
+- [ ] Add annual statement generation (for contract renewal / visa)
 - [ ] Define MVP for employer-side features (what's minimum to charge?)
+
+### Decide (by Jul 8)
+- [ ] Personal tool or product?
+- [ ] If product: target audience, launch plan, distribution
 
 ---
 

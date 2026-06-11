@@ -90,3 +90,46 @@ export interface OcrResultExtended extends OcrResult {
   source_type: "invoice" | "wallet_statement";
   wallet_name: string | null;
 }
+
+export interface User {
+  id: number;
+  name: string;
+  role: "employer" | "helper" | "family";
+  salary: number | null;
+  active: boolean;
+  created_at: string;
+}
+
+export interface UserSession {
+  id: number;
+  name: string;
+  role: "employer" | "helper" | "family";
+  token: string;
+}
+
+export interface SalaryPayment {
+  id: number;
+  user_id: number;
+  user_name?: string;
+  month: string;
+  base_salary: number;
+  loan_deduction: number;
+  other_deduction: number;
+  bonus: number;
+  net_paid: number;
+  status: "pending" | "paid";
+  paid_date: string | null;
+  notes: string | null;
+}
+
+export interface Loan {
+  id: number;
+  user_id: number;
+  user_name?: string;
+  amount: number;
+  balance: number;
+  emi: number;
+  reason: string | null;
+  status: "active" | "paid_off";
+  disbursed_at: string;
+}

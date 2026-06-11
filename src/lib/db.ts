@@ -95,4 +95,62 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_alerts_resolved ON alerts(resolved);
 `);
 
+// Users & Auth
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL,
+    role       TEXT NOT NULL CHECK(role IN ('employer','helper','family')),
+    password   TEXT NOT NULL,
+    salary     REAL DEFAULT NULL,
+    active     INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
+// Salary payments
+db.exec(`
+  CREATE TABLE IF NOT EXISTS salary_payments (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id          INTEGER NOT NULL REFERENCES users(id),
+    month            TEXT NOT NULL,
+    base_salary      REAL NOT NULL,
+    loan_deduction   REAL NOT NULL DEFAULT 0,
+    other_deduction  REAL NOT NULL DEFAULT 0,
+    bonus            REAL NOT NULL DEFAULT 0,
+    net_paid         REAL NOT NULL,
+    status           TEXT NOT NULL CHECK(status IN ('pending','paid')) DEFAULT 'pending',
+    paid_date        TEXT,
+    notes            TEXT,
+    created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
+// Loans
+db.exec(`
+  CREATE TABLE IF NOT EXISTS loans (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL REFERENCES users(id),
+    amount        REAL NOT NULL,
+    balance       REAL NOT NULL,
+    emi           REAL NOT NULL,
+    reason        TEXT,
+    status        TEXT NOT NULL CHECK(status IN ('active','paid_off')) DEFAULT 'active',
+    disbursed_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
+// App settings
+db.exec(`
+  CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+  INSERT OR IGNORE INTO settings (key, value) VALUES
+    ('currency_symbol', 'HK$'),
+    ('currency_code', 'HKD'),
+    ('household_name', 'My Household');
+`);
+
 export default db;

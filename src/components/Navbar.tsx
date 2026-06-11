@@ -4,11 +4,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 
-const links = [
-  { href: "/", label: "Home", icon: "🏠" },
-  { href: "/transactions", label: "Transactions", icon: "📋" },
-  { href: "/reports", label: "Reports", icon: "📈" },
-  { href: "/insights", label: "Insights", icon: "💡" },
+interface NavLink { href: string; label: string; icon: string; roles: string[] }
+
+const allLinks: NavLink[] = [
+  { href: "/", label: "Home", icon: "🏠", roles: ["employer", "family"] },
+  { href: "/record-expense", label: "Record Expense", icon: "🧾", roles: ["employer", "family", "helper"] },
+  { href: "/transactions", label: "Transactions", icon: "📋", roles: ["employer", "family"] },
+  { href: "/reports", label: "Reports", icon: "📈", roles: ["employer", "family"] },
+  { href: "/insights", label: "Insights", icon: "💡", roles: ["employer", "family"] },
+  { href: "/salary", label: "Salary", icon: "💵", roles: ["employer", "family", "helper"] },
+  { href: "/admin", label: "Admin", icon: "⚙️", roles: ["employer"] },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -17,8 +22,13 @@ const roleLabels: Record<string, string> = {
   family: "Family",
 };
 
-export default function Navbar({ helperName, role, onChangeName }: { helperName: string; role: string; onChangeName: () => void }) {
+export default function Navbar({ userName, role, onLogout }: { userName: string; role: string; onLogout: () => void }) {
   const pathname = usePathname();
+  const links = allLinks.filter((l) => l.roles.includes(role));
+
+  // Mobile: show max 5 items (4 + More if needed)
+  const mobileLinks = links.slice(0, 4);
+  const hasMore = links.length > 4;
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -53,17 +63,17 @@ export default function Navbar({ helperName, role, onChangeName }: { helperName:
         <div className="p-4 m-3 mb-4 rounded-xl bg-white/5 border border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7a8a56] to-[#5c6b3c] flex items-center justify-center text-white font-bold text-sm shadow-md">
-              {helperName[0].toUpperCase()}
+              {userName[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate text-[#d4c9b8]">{helperName}</div>
+              <div className="text-sm font-medium truncate text-[#d4c9b8]">{userName}</div>
               <div className="text-xs text-[#8b7355]">{roleLabels[role] || role}</div>
             </div>
             <button
-              onClick={onChangeName}
+              onClick={onLogout}
               className="text-xs text-[#8b7355] hover:text-[#d4c9b8] transition-colors px-2 py-1 rounded-lg hover:bg-white/10"
             >
-              Switch
+              Logout
             </button>
           </div>
         </div>
@@ -72,7 +82,7 @@ export default function Navbar({ helperName, role, onChangeName }: { helperName:
       {/* Mobile Bottom Tab Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#2c2418] border-t border-white/10 safe-bottom">
         <div className="flex items-center justify-around py-2 px-2">
-          {links.map((link) => (
+          {mobileLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -84,6 +94,17 @@ export default function Navbar({ helperName, role, onChangeName }: { helperName:
               <span className="text-[10px] font-semibold">{link.label}</span>
             </Link>
           ))}
+          {hasMore && (
+            <Link
+              href={links[4].href}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors ${
+                isActive(links[4].href) ? "text-[#c8d4a9]" : "text-[#a69279]"
+              }`}
+            >
+              <span className="text-xl">{links[4].icon}</span>
+              <span className="text-[10px] font-semibold">{links[4].label}</span>
+            </Link>
+          )}
         </div>
       </nav>
     </>

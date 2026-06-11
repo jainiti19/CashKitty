@@ -3,71 +3,61 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import Image from "next/image";
 import Navbar from "./Navbar";
-import HelperNamePrompt from "./HelperNamePrompt";
+import LoginForm from "./LoginForm";
 import LandingPage from "./LandingPage";
+import type { UserSession } from "@/types";
 
-interface UserInfo {
-  name: string;
-  role: string;
-}
-
-const HelperContext = createContext<UserInfo>({ name: "", role: "" });
+const UserContext = createContext<UserSession>({ id: 0, name: "", role: "helper", token: "" });
 
 export function useHelperName() {
-  const user = useContext(HelperContext);
-  return user.name;
+  return useContext(UserContext).name;
 }
 
 export function useUserInfo() {
-  return useContext(HelperContext);
+  return useContext(UserContext);
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const [session, setSession] = useState<UserSession | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
-    const storedName = localStorage.getItem("cashkitty_helper_name");
-    const storedRole = localStorage.getItem("cashkitty_helper_role");
-    if (storedName) setUser({ name: storedName, role: storedRole || "helper" });
+    const stored = localStorage.getItem("cashkitty_session");
+    if (stored) {
+      try { setSession(JSON.parse(stored)); } catch { /* ignore */ }
+    }
     setLoaded(true);
   }, []);
 
-  function handleSetUser(name: string, role: string) {
-    localStorage.setItem("cashkitty_helper_name", name);
-    localStorage.setItem("cashkitty_helper_role", role);
-    setUser({ name, role });
-    setShowNamePrompt(false);
+  function handleLogin(s: UserSession) {
+    localStorage.setItem("cashkitty_session", JSON.stringify(s));
+    setSession(s);
+    setShowLogin(false);
   }
 
-  function handleChangeName() {
-    localStorage.removeItem("cashkitty_helper_name");
-    localStorage.removeItem("cashkitty_helper_role");
-    setUser(null);
-    setShowNamePrompt(false);
+  function handleLogout() {
+    localStorage.removeItem("cashkitty_session");
+    setSession(null);
+    setShowLogin(false);
   }
 
   if (!loaded) return null;
 
-  if (!user) {
-    if (showNamePrompt) {
-      return <HelperNamePrompt onSubmit={handleSetUser} />;
-    }
-    return <LandingPage onGetStarted={() => setShowNamePrompt(true)} />;
+  if (!session) {
+    if (showLogin) return <LoginForm onLogin={handleLogin} />;
+    return <LandingPage onGetStarted={() => setShowLogin(true)} />;
   }
 
   return (
-    <HelperContext.Provider value={user}>
+    <UserContext.Provider value={session}>
       <div className="flex min-h-screen">
-        <Navbar helperName={user.name} role={user.role} onChangeName={handleChangeName} />
+        <Navbar userName={session.name} role={session.role} onLogout={handleLogout} />
         <main className="flex-1 overflow-auto pb-20 md:pb-0">
-          {/* Mobile header */}
           <div className="md:hidden flex items-center justify-center gap-2 py-3 bg-[#f0ebe3]/80 backdrop-blur-md border-b border-[#d4c9b8]/50 sticky top-0 z-30">
             <Image src="/logo.png" alt="CashKitty" width={28} height={28} className="rounded-lg" />
             <span className="text-base font-bold text-[#2c2418] tracking-tight">CashKitty</span>
           </div>
-          {/* Desktop header */}
           <div className="hidden md:flex items-center justify-center gap-3 py-3 bg-[#f0ebe3]/80 backdrop-blur-md border-b border-[#d4c9b8]/50 sticky top-0 z-10">
             <Image src="/logo.png" alt="CashKitty" width={32} height={32} className="rounded-lg" />
             <span className="text-lg font-bold text-[#2c2418] tracking-tight">CashKitty</span>
@@ -75,6 +65,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="p-4 md:p-6 animate-fade-in">{children}</div>
         </main>
       </div>
-    </HelperContext.Provider>
+    </UserContext.Provider>
   );
 }
