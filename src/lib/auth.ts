@@ -1,15 +1,14 @@
-import bcrypt from "bcryptjs";
 import { createHash } from "crypto";
 import db from "./db";
 
 const SECRET = "cashkitty-session-secret";
 
 export function hashPassword(password: string): string {
-  return bcrypt.hashSync(password, 10);
+  return createHash("sha256").update(password + SECRET).digest("hex");
 }
 
 export function verifyPassword(password: string, hash: string): boolean {
-  return bcrypt.compareSync(password, hash);
+  return hashPassword(password) === hash;
 }
 
 export function createToken(userId: number, passwordHash: string): string {

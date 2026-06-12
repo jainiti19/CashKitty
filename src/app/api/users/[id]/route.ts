@@ -22,6 +22,7 @@ export async function PUT(
   if (body.role !== undefined) { fields.push("role = ?"); values.push(body.role); }
   if (body.salary !== undefined) { fields.push("salary = ?"); values.push(body.salary); }
   if (body.active !== undefined) { fields.push("active = ?"); values.push(body.active ? 1 : 0); }
+  if (body.phone !== undefined) { fields.push("phone = ?"); values.push(body.phone); }
   if (body.password) { fields.push("password = ?"); values.push(hashPassword(body.password)); }
 
   if (fields.length === 0) {

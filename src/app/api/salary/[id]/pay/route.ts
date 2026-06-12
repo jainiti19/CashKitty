@@ -28,10 +28,15 @@ export async function POST(
     const loans = db.prepare("SELECT id, balance, emi FROM loans WHERE user_id = ? AND status = 'active' ORDER BY id").all(payment.user_id) as { id: number; balance: number; emi: number }[];
 
     for (const loan of loans) {
-      const newBalance = Math.max(0, loan.balance - loan.emi);
+      const deduction = Math.min(loan.emi, loan.balance);
+      const newBalance = Math.max(0, loan.balance - deduction);
       db.prepare("UPDATE loans SET balance = ?, status = ? WHERE id = ?").run(
         newBalance, newBalance <= 0 ? "paid_off" : "active", loan.id
       );
+      // Log EMI deduction
+      db.prepare(
+        "INSERT INTO loan_transactions (loan_id, type, amount, balance_after, note, date) VALUES (?, 'emi', ?, ?, ?, ?)"
+      ).run(loan.id, deduction, newBalance, `EMI deduction from ${payment.month} salary`, today);
     }
   }
 

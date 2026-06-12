@@ -69,6 +69,30 @@ export default function SalaryPage() {
     fetch(`/api/loans?user_id=${selectedUser}`, { headers }).then((r) => r.json()).then((d) => setLoans(d.loans || []));
   }
 
+  const [repayLoanId, setRepayLoanId] = useState<number | null>(null);
+  const [repayAmount, setRepayAmount] = useState("");
+  const [expandedLoan, setExpandedLoan] = useState<number | null>(null);
+  const [loanTxns, setLoanTxns] = useState<{ id: number; type: string; amount: number; balance_after: number; note: string; date: string }[]>([]);
+
+  async function toggleLoanHistory(loanId: number) {
+    if (expandedLoan === loanId) { setExpandedLoan(null); return; }
+    setExpandedLoan(loanId);
+    const res = await fetch(`/api/loans/${loanId}/transactions`, { headers });
+    const data = await res.json();
+    setLoanTxns(data.transactions || []);
+  }
+
+  async function repayLoan(loanId: number) {
+    if (!repayAmount || parseFloat(repayAmount) <= 0) return;
+    await fetch(`/api/loans/${loanId}`, {
+      method: "POST", headers,
+      body: JSON.stringify({ amount: parseFloat(repayAmount) }),
+    });
+    setRepayLoanId(null);
+    setRepayAmount("");
+    fetch(`/api/loans?user_id=${selectedUser}`, { headers }).then((r) => r.json()).then((d) => setLoans(d.loans || []));
+  }
+
   const activeLoans = loans.filter((l) => l.status === "active");
   const totalLoanBalance = activeLoans.reduce((s, l) => s + l.balance, 0);
   const selectedUserData = users.find((u) => u.id === selectedUser);
@@ -165,7 +189,7 @@ export default function SalaryPage() {
                       <div className="text-right">
                         <div className="text-sm font-bold text-[#2c2418]">{fmt(p.net_paid)}</div>
                         <div className={`text-xs font-medium ${p.status === "paid" ? "text-[#5c6b3c]" : "text-[#96623c]"}`}>
-                          {p.status === "paid" ? `Paid ${p.paid_date || ""}` : "Pending"}
+                          {p.status === "paid" ? `Paid on ${p.paid_date || "-"}` : "Pending"}
                         </div>
                       </div>
                       {isEmployer && p.status === "pending" && (
@@ -190,18 +214,100 @@ export default function SalaryPage() {
             ) : (
               <div className="divide-y divide-[#d4c9b8]/20">
                 {loans.map((l) => (
-                  <div key={l.id} className="px-5 py-3 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-[#2c2418]">{l.reason || "Loan"}</div>
-                      <div className="text-xs text-[#8b7355]">
-                        Amount: {fmt(l.amount)} · EMI: {fmt(l.emi)}/mo · Remaining: {fmt(l.balance)}
+                  <div key={l.id} className="px-5 py-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-[#2c2418]">{l.reason || "Loan"}</div>
+                        <div className="text-xs text-[#8b7355]">
+                          Amount: {fmt(l.amount)} · EMI: {fmt(l.emi)}/mo · Remaining: {fmt(l.balance)}
+                          {l.disbursed_at && ` · Given: ${l.disbursed_at.split("T")[0]}`}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleLoanHistory(l.id)}
+                          className="px-3 py-1.5 text-[#8b7355] hover:bg-[#d4c9b8]/20 rounded-lg text-xs font-medium"
+                        >
+                          {expandedLoan === l.id ? "Hide" : "History"}
+                        </button>
+                        {isEmployer && l.status === "active" && (
+                          <button
+                            onClick={() => setRepayLoanId(repayLoanId === l.id ? null : l.id)}
+                            className="px-3 py-1.5 text-[#5c6b3c] hover:bg-[#5c6b3c]/10 rounded-lg text-xs font-medium"
+                          >
+                            Repay
+                          </button>
+                        )}
+                        <span className={`text-xs font-semibold px-2 py-1 rounded-lg ${
+                          l.status === "active" ? "bg-[#96623c]/10 text-[#96623c]" : "bg-[#5c6b3c]/10 text-[#5c6b3c]"
+                        }`}>
+                          {l.status === "active" ? "Active" : "Paid Off"}
+                        </span>
                       </div>
                     </div>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded-lg ${
-                      l.status === "active" ? "bg-[#96623c]/10 text-[#96623c]" : "bg-[#5c6b3c]/10 text-[#5c6b3c]"
-                    }`}>
-                      {l.status === "active" ? "Active" : "Paid Off"}
-                    </span>
+                    {repayLoanId === l.id && (
+                      <div className="mt-3 flex gap-2 items-center animate-fade-in">
+                        <input
+                          type="number"
+                          value={repayAmount}
+                          onChange={(e) => setRepayAmount(e.target.value)}
+                          placeholder={`Max ${Math.round(l.balance)}`}
+                          className="flex-1 px-3 py-2 bg-white border border-[#d4c9b8] rounded-xl text-sm"
+                          max={l.balance}
+                          min={1}
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => repayLoan(l.id)}
+                          disabled={!repayAmount || parseFloat(repayAmount) <= 0}
+                          className="px-4 py-2 bg-[#5c6b3c] text-white rounded-xl text-xs font-semibold disabled:opacity-40"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => { setRepayLoanId(null); setRepayAmount(""); }}
+                          className="px-3 py-2 text-[#8b7355] text-xs"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                    {expandedLoan === l.id && (
+                      <div className="mt-3 animate-fade-in">
+                        <div className="text-xs font-semibold text-[#8b7355] uppercase tracking-wider mb-2">Balance History</div>
+                        {loanTxns.length === 0 ? (
+                          <div className="text-xs text-[#8b7355] py-2">No transactions recorded yet.</div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {loanTxns.map((t) => (
+                              <div key={t.id} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-white/50 text-xs">
+                                <div className="flex items-center gap-2">
+                                  <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] ${
+                                    t.type === "disbursement" ? "bg-[#96623c]/15 text-[#96623c]"
+                                    : t.type === "emi" ? "bg-amber-100 text-amber-600"
+                                    : "bg-[#5c6b3c]/15 text-[#5c6b3c]"
+                                  }`}>
+                                    {t.type === "disbursement" ? "📤" : t.type === "emi" ? "📅" : "💵"}
+                                  </span>
+                                  <div>
+                                    <span className="font-medium text-[#2c2418]">
+                                      {t.type === "disbursement" ? "Loan Given" : t.type === "emi" ? "EMI Deduction" : "Ad-hoc Repayment"}
+                                    </span>
+                                    <span className="text-[#8b7355] ml-2">{t.date}</span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <span className={`font-semibold ${t.type === "disbursement" ? "text-[#96623c]" : "text-[#5c6b3c]"}`}>
+                                    {t.type === "disbursement" ? "+" : "-"}{fmt(t.amount)}
+                                  </span>
+                                  <span className="text-[#8b7355] ml-2">Bal: {fmt(t.balance_after)}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

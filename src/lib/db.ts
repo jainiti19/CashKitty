@@ -103,10 +103,17 @@ db.exec(`
     role       TEXT NOT NULL CHECK(role IN ('employer','helper','family')),
     password   TEXT NOT NULL,
     salary     REAL DEFAULT NULL,
+    phone      TEXT DEFAULT NULL,
     active     INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
+
+// Migration: add phone column
+const userCols = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+if (!userCols.some((c) => c.name === "phone")) {
+  db.exec("ALTER TABLE users ADD COLUMN phone TEXT DEFAULT NULL");
+}
 
 // Salary payments
 db.exec(`
@@ -138,6 +145,20 @@ db.exec(`
     status        TEXT NOT NULL CHECK(status IN ('active','paid_off')) DEFAULT 'active',
     disbursed_at  TEXT NOT NULL DEFAULT (datetime('now')),
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
+// Loan transactions (history of all balance changes)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS loan_transactions (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    loan_id    INTEGER NOT NULL REFERENCES loans(id),
+    type       TEXT NOT NULL CHECK(type IN ('disbursement','emi','adhoc_repayment')),
+    amount     REAL NOT NULL,
+    balance_after REAL NOT NULL,
+    note       TEXT,
+    date       TEXT NOT NULL DEFAULT (date('now')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
 

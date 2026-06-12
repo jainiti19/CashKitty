@@ -45,7 +45,7 @@ export default function AdminPage() {
 
 function UsersTab({ headers }: { headers: Record<string, string> }) {
   const [users, setUsers] = useState<User[]>([]);
-  const [newUser, setNewUser] = useState({ name: "", role: "helper", password: "", salary: "" });
+  const [newUser, setNewUser] = useState({ name: "", role: "helper", password: "", salary: "", phone: "" });
 
   function load() {
     fetch("/api/users", { headers }).then((r) => r.json()).then((d) => setUsers(d.users || []));
@@ -56,9 +56,9 @@ function UsersTab({ headers }: { headers: Record<string, string> }) {
     e.preventDefault();
     await fetch("/api/users", {
       method: "POST", headers,
-      body: JSON.stringify({ ...newUser, salary: newUser.salary ? parseFloat(newUser.salary) : null }),
+      body: JSON.stringify({ ...newUser, salary: newUser.salary ? parseFloat(newUser.salary) : null, phone: newUser.phone || null }),
     });
-    setNewUser({ name: "", role: "helper", password: "", salary: "" });
+    setNewUser({ name: "", role: "helper", password: "", salary: "", phone: "" });
     load();
   }
 
@@ -83,6 +83,7 @@ function UsersTab({ headers }: { headers: Record<string, string> }) {
           </select>
           <input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} placeholder="Password" className="px-3 py-2 bg-white border border-[#d4c9b8] rounded-xl text-sm" required minLength={4} />
           <input type="number" value={newUser.salary} onChange={(e) => setNewUser({ ...newUser, salary: e.target.value })} placeholder="Salary (optional)" className="px-3 py-2 bg-white border border-[#d4c9b8] rounded-xl text-sm" />
+          <input value={newUser.phone} onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })} placeholder="WhatsApp (+852...)" className="px-3 py-2 bg-white border border-[#d4c9b8] rounded-xl text-sm" />
         </div>
         <button type="submit" className="px-5 py-2 bg-gradient-to-r from-[#5c6b3c] to-[#4a5630] text-white rounded-xl text-sm font-semibold shadow-md active:scale-[0.98]">
           Add User

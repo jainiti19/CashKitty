@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const { name, role, password, salary } = await request.json();
+  const { name, role, password, salary, phone } = await request.json();
 
   if (!name || !role || !password || password.length < 4) {
     return NextResponse.json({ error: "Name, role, and password (min 4 chars) required" }, { status: 400 });
@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = db.prepare(
-      "INSERT INTO users (name, role, password, salary) VALUES (?, ?, ?, ?)"
-    ).run(name, role, hashed, salary || null);
+      "INSERT INTO users (name, role, password, salary, phone) VALUES (?, ?, ?, ?, ?)"
+    ).run(name, role, hashed, salary || null, phone || null);
 
     const user = db.prepare(
       "SELECT id, name, role, salary, active, created_at FROM users WHERE id = ?"

@@ -43,6 +43,11 @@ export async function POST(request: NextRequest) {
     "INSERT INTO loans (user_id, amount, balance, emi, reason) VALUES (?, ?, ?, ?, ?)"
   ).run(user_id, amount, amount, emi, reason || null);
 
+  // Log disbursement
+  db.prepare(
+    "INSERT INTO loan_transactions (loan_id, type, amount, balance_after, note) VALUES (?, 'disbursement', ?, ?, ?)"
+  ).run(result.lastInsertRowid, amount, amount, `Loan disbursed: ${reason || "Loan"}`);
+
   const loan = db.prepare("SELECT l.*, u.name as user_name FROM loans l JOIN users u ON l.user_id = u.id WHERE l.id = ?").get(result.lastInsertRowid);
 
   return NextResponse.json({ loan }, { status: 201 });
