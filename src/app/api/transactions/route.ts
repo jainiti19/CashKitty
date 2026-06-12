@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { detectInvoiceMismatch } from "@/lib/fraud-detector";
+import { checkDuplicate } from "@/lib/duplicate-detector";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -72,6 +73,13 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Duplicate detection (warn, don't block)
+  const dupCheck = checkDuplicate(type, amount, description || null, helper_name, date);
+  let dupWarning: string | null = null;
+  if (dupCheck.isDuplicate) {
+    dupWarning = dupCheck.message;
+  }
+
   const id = uuidv4();
   db.prepare(
     `INSERT INTO transactions (id, type, amount, description, category_id, helper_name, invoice_image, ocr_raw, date, channel_id)
@@ -105,5 +113,5 @@ export async function POST(request: NextRequest) {
     )
     .get(id);
 
-  return NextResponse.json({ transaction, limit_warning: limitWarning }, { status: 201 });
+  return NextResponse.json({ transaction, limit_warning: limitWarning, duplicate_warning: dupWarning }, { status: 201 });
 }
